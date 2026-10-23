@@ -285,10 +285,27 @@
 
 <div class="app">
 
-  <header>
+    <header>
     <button id="backBtn" class="back" hidden>←</button>
     <h1 id="screenTitle">✂️ Клиенты</h1>
     <button id="themeBtn" class="theme-btn" title="Сменить тему">🌙</button>
+    
+    <!-- НОВАЯ КНОПКА НАСТРОЕК -->
+    <div class="dropdown-wrap" id="settingsWrap" style="flex: 0 0 auto;">
+      <button class="theme-btn" id="settingsBtn" title="Настройки" style="font-size: 19px;">⚙️</button>
+      <div class="dd-menu" id="settingsMenu" style="width: 150px; left: auto; right: 0;">
+        <div class="dd-item" id="exportBtn">
+          <div class="dd-icon">📤</div>
+          <div class="dd-blk"><div class="dd-name">Экспорт</div></div>
+        </div>
+        <div class="dd-item" id="importBtn">
+          <div class="dd-icon">📥</div>
+          <div class="dd-blk"><div class="dd-name">Импорт</div></div>
+        </div>
+      </div>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display: none;">
+    <!-- КОНЕЦ НОВОЙ КНОПКИ -->
   </header>
 
   <section id="screenList" class="screen active">
