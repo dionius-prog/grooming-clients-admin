@@ -503,6 +503,11 @@
   const screenTitle = $('screenTitle');
   const backBtn     = $('backBtn');
   const themeBtn    = $('themeBtn');
+  const settingsWrap = $('settingsWrap');
+  const settingsBtn  = $('settingsBtn');
+  const exportBtn    = $('exportBtn');
+  const importBtn    = $('importBtn');
+  const importFile   = $('importFile');
   const screens     = {
     list:       $('screenList'),
     dog:        $('screenDog'),
@@ -606,6 +611,16 @@
     applyTheme(next);
   }
   themeBtn.addEventListener('click', toggleTheme);
+    settingsBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (settingsWrap.classList.contains('open')) {
+      closeAllDropdowns();
+    } else {
+      closeAllDropdowns();
+      settingsWrap.classList.add('open');
+      ddBackdrop.classList.add('open');
+    }
+  });
 
   /* ===== базовые функции ===== */
   function todayISO(){
@@ -835,6 +850,7 @@
   }
 
   function closeAllDropdowns(){
+    settingsWrap.classList.remove('open');
     sortWrap.classList.remove('open');
     viewWrap.classList.remove('open');
     ddBackdrop.classList.remove('open');
@@ -1547,6 +1563,61 @@
     reader.readAsText(file);
   });
   
+    /* ===== ЭКСПОРТ И ИМПОРТ БАЗЫ ===== */
+  
+  exportBtn.addEventListener('click', () => {
+    closeAllDropdowns();
+    if (!state.dogs || state.dogs.length === 0) {
+      alert('Нет данных для сохранения.');
+      return;
+    }
+    const dataStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    
+    const date = new Date().toISOString().slice(0,10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `grooming_backup_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener('click', () => {
+    closeAllDropdowns();
+    importFile.click();
+  });
+
+  importFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!confirm('Внимание! Загрузка файла заменит ВСЕ текущие данные. Продолжить?')) {
+      importFile.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed && Array.isArray(parsed.dogs)) {
+          state = parsed;
+          save();
+          renderList();
+          alert('База успешно загружена! Собак в базе: ' + state.dogs.length);
+        } else {
+          alert('Ошибка: неверный формат файла.');
+        }
+      } catch (err) {
+        alert('Ошибка при чтении файла.');
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
   applyTheme(getSavedTheme());
   load();
   loadSort();
