@@ -13,6 +13,7 @@
 <meta name="apple-mobile-web-app-title" content="Клиенты">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/localforage/1.10.0/localforage.min.js"></script>
 
 <script>
   (function(){
@@ -716,34 +717,53 @@
   function cleanMm(s){
     return String(s || '').trim().replace(/[^\d.,\s]/g, '');
   }
-  function save(){
+
+  // Настройка "большого склада" (IndexedDB)
+  localforage.config({
+    name: 'GroomingApp',
+    storeName: 'grooming_data'
+  });
+
+  async function load(){
     try {
-      localStorage.setItem(LS_KEY, JSON.stringify(state));
-    } catch(e){
-      alert('Не удалось сохранить. Возможно, закончилось место в памяти браузера.\n\nПопробуйте удалить старые визиты с фото.');
-    }
-  }
-  function load(){
-    try {
+      const savedState = await localforage.getItem('grooming_state');
+      
+      if (savedState && Array.isArray(savedState.dogs)) {
+        state = savedState;
+        state.dogs.forEach(d => {
+          (d.visits || []).forEach(v => {
+            if (v.clipperMm && !v.clipperBody){
+              v.clipperBody = v.clipperMm;
+              delete v.clipperMm;
+            }
+          });
+        });
+        return;
+      }
+
       const raw = localStorage.getItem(LS_KEY);
       if (raw){
         const parsed = JSON.parse(raw);
         if (parsed && Array.isArray(parsed.dogs)){
           state = parsed;
-          state.dogs.forEach(d => {
-            (d.visits || []).forEach(v => {
-              if (v.clipperMm && !v.clipperBody){
-                v.clipperBody = v.clipperMm;
-                delete v.clipperMm;
-              }
-            });
-          });
+          await save();
           return;
         }
       }
-    } catch(e){}
+    } catch(e){
+      console.error('Ошибка загрузки:', e);
+    }
     state = { dogs: [] };
   }
+
+  async function save(){
+    try {
+      await localforage.setItem('grooming_state', state);
+    } catch(e){
+      alert('Не удалось сохранить данные. Возможно, на телефоне закончилось место.');
+    }
+  }
+
   function loadSort(){
     try {
       const s = localStorage.getItem(LS_SORT_KEY);
@@ -1549,13 +1569,15 @@
     reader.readAsText(file);
   });
 
-  applyTheme(getSavedTheme());
-  load();
-  loadSort();
-  loadView();
-  updateToolBtns();
-  renderList();
-  showScreen('list', '✂️ Клиенты');
+  (async function init() {
+    applyTheme(getSavedTheme());
+    await load();
+    loadSort();
+    loadView();
+    updateToolBtns();
+    renderList();
+    showScreen('list', '✂️ Клиенты');
+  })();
 
 })();
 </script>
