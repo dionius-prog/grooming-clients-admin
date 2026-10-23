@@ -285,12 +285,11 @@
 
 <div class="app">
 
-    <header>
+  <header>
     <button id="backBtn" class="back" hidden>←</button>
     <h1 id="screenTitle">✂️ Клиенты</h1>
     <button id="themeBtn" class="theme-btn" title="Сменить тему">🌙</button>
     
-    <!-- НОВАЯ КНОПКА НАСТРОЕК -->
     <div class="dropdown-wrap" id="settingsWrap" style="flex: 0 0 auto;">
       <button class="theme-btn" id="settingsBtn" title="Настройки" style="font-size: 19px;">⚙️</button>
       <div class="dd-menu" id="settingsMenu" style="width: 150px; left: auto; right: 0;">
@@ -305,7 +304,6 @@
       </div>
     </div>
     <input type="file" id="importFile" accept=".json" style="display: none;">
-    <!-- КОНЕЦ НОВОЙ КНОПКИ -->
   </header>
 
   <section id="screenList" class="screen active">
@@ -329,15 +327,6 @@
       </div>
     </div>
     <button id="addDogBtn" class="primary full">+ Добавить собаку</button>
-    
-    <!-- НОВЫЕ КНОПКИ БЭКАПА -->
-    <div style="display: flex; gap: 8px; margin-top: 8px;">
-      <button id="exportBtn" class="ghost" style="flex: 1; padding: 10px;">📤 Экспорт</button>
-      <button id="importBtn" class="ghost" style="flex: 1; padding: 10px;">📥 Импорт</button>
-    </div>
-    <input type="file" id="importFile" accept=".json" style="display: none;">
-    <!-- КОНЕЦ НОВЫХ КНОПОК -->
-    
     <div id="dogList" class="dog-list v2"></div>
   </section>
 
@@ -477,7 +466,7 @@
 </div>
 
 <script>
-(function(){
+  (function(){
   "use strict";
 
   const LS_KEY      = 'grooming_clients_v1';
@@ -503,11 +492,13 @@
   const screenTitle = $('screenTitle');
   const backBtn     = $('backBtn');
   const themeBtn    = $('themeBtn');
+  
   const settingsWrap = $('settingsWrap');
   const settingsBtn  = $('settingsBtn');
   const exportBtn    = $('exportBtn');
   const importBtn    = $('importBtn');
   const importFile   = $('importFile');
+
   const screens     = {
     list:       $('screenList'),
     dog:        $('screenDog'),
@@ -519,9 +510,6 @@
   const dogList     = $('dogList');
   const searchInput = $('searchInput');
   const addDogBtn   = $('addDogBtn');
-  const exportBtn   = $('exportBtn');
-  const importBtn   = $('importBtn');
-  const importFile  = $('importFile');
 
   const sortWrap     = $('sortWrap');
   const sortBtn      = $('sortBtn');
@@ -611,7 +599,8 @@
     applyTheme(next);
   }
   themeBtn.addEventListener('click', toggleTheme);
-    settingsBtn.addEventListener('click', (e) => {
+
+  settingsBtn.addEventListener('click', (e) => {
     e.stopPropagation();
     if (settingsWrap.classList.contains('open')) {
       closeAllDropdowns();
@@ -695,9 +684,7 @@
   }
    function breedColor(d){
     const b = (d.breed || '').toLowerCase().trim();
-    if (!b) return '#4a5568'; // Серый, если порода вообще не указана
-
-    // Цвета для популярных пород (чтобы было красиво)
+    if (!b) return '#4a5568';
     if (b.includes('шпиц'))   return '#4c8dff';
     if (b.includes('йорк'))   return '#2fbf71';
     if (b.includes('пудел'))  return '#a78bfa';
@@ -705,14 +692,12 @@
     if (b.includes('чихуа'))  return '#7ee0e6';
     if (b.includes('мопс'))   return '#ffa58c';
     if (b.includes('мальтезе'))return '#ff9ecb';
-
-    // А для ВСЕХ ОСТАЛЬНЫХ (введенных вручную) генерируем уникальный цвет
     let hash = 0;
     for (let i = 0; i < b.length; i++) {
       hash = b.charCodeAt(i) + ((hash << 5) - hash);
     }
-    const hue = Math.abs(hash) % 360; // Вычисляем оттенок от 0 до 360
-    return `hsl(${hue}, 70%, 60%)`; // Выдаем насыщенный цвет
+    const hue = Math.abs(hash) % 360;
+    return `hsl(${hue}, 70%, 60%)`;
   }
   function breedClass(d){
     const b = (d.breed || '').toLowerCase();
@@ -850,9 +835,9 @@
   }
 
   function closeAllDropdowns(){
-    settingsWrap.classList.remove('open');
     sortWrap.classList.remove('open');
     viewWrap.classList.remove('open');
+    settingsWrap.classList.remove('open');
     ddBackdrop.classList.remove('open');
   }
   function openDropdown(which){
@@ -1509,62 +1494,7 @@
     showDog(d.id);
   });
 
-    /* ===== ЭКСПОРТ И ИМПОРТ БАЗЫ ===== */
-  
-  exportBtn.addEventListener('click', () => {
-    if (!state.dogs || state.dogs.length === 0) {
-      alert('Нет данных для сохранения.');
-      return;
-    }
-    const dataStr = JSON.stringify(state, null, 2);
-    const blob = new Blob([dataStr], {type: "application/json"});
-    const url = URL.createObjectURL(blob);
-    
-    const date = new Date().toISOString().slice(0,10);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `grooming_backup_${date}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
-
-  importBtn.addEventListener('click', () => {
-    importFile.click();
-  });
-
-  importFile.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!confirm('Внимание! Загрузка файла заменит ВСЕ текущие данные. Продолжить?')) {
-      importFile.value = '';
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      try {
-        const parsed = JSON.parse(event.target.result);
-        if (parsed && Array.isArray(parsed.dogs)) {
-          state = parsed;
-          save();
-          renderList();
-          alert('База успешно загружена! Собак в базе: ' + state.dogs.length);
-        } else {
-          alert('Ошибка: неверный формат файла.');
-        }
-      } catch (err) {
-        alert('Ошибка при чтении файла.');
-      }
-      importFile.value = '';
-    };
-    reader.readAsText(file);
-  });
-  
-    /* ===== ЭКСПОРТ И ИМПОРТ БАЗЫ ===== */
-  
+  /* ===== БЭКАП ===== */
   exportBtn.addEventListener('click', () => {
     closeAllDropdowns();
     if (!state.dogs || state.dogs.length === 0) {
@@ -1618,6 +1548,7 @@
     };
     reader.readAsText(file);
   });
+
   applyTheme(getSavedTheme());
   load();
   loadSort();
