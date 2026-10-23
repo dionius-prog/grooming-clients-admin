@@ -312,6 +312,15 @@
       </div>
     </div>
     <button id="addDogBtn" class="primary full">+ Добавить собаку</button>
+    
+    <!-- НОВЫЕ КНОПКИ БЭКАПА -->
+    <div style="display: flex; gap: 8px; margin-top: 8px;">
+      <button id="exportBtn" class="ghost" style="flex: 1; padding: 10px;">📤 Экспорт</button>
+      <button id="importBtn" class="ghost" style="flex: 1; padding: 10px;">📥 Импорт</button>
+    </div>
+    <input type="file" id="importFile" accept=".json" style="display: none;">
+    <!-- КОНЕЦ НОВЫХ КНОПОК -->
+    
     <div id="dogList" class="dog-list v2"></div>
   </section>
 
@@ -488,6 +497,9 @@
   const dogList     = $('dogList');
   const searchInput = $('searchInput');
   const addDogBtn   = $('addDogBtn');
+  const exportBtn   = $('exportBtn');
+  const importBtn   = $('importBtn');
+  const importFile  = $('importFile');
 
   const sortWrap     = $('sortWrap');
   const sortBtn      = $('sortBtn');
@@ -1464,6 +1476,60 @@
     showDog(d.id);
   });
 
+    /* ===== ЭКСПОРТ И ИМПОРТ БАЗЫ ===== */
+  
+  exportBtn.addEventListener('click', () => {
+    if (!state.dogs || state.dogs.length === 0) {
+      alert('Нет данных для сохранения.');
+      return;
+    }
+    const dataStr = JSON.stringify(state, null, 2);
+    const blob = new Blob([dataStr], {type: "application/json"});
+    const url = URL.createObjectURL(blob);
+    
+    const date = new Date().toISOString().slice(0,10);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `grooming_backup_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+
+  importBtn.addEventListener('click', () => {
+    importFile.click();
+  });
+
+  importFile.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!confirm('Внимание! Загрузка файла заменит ВСЕ текущие данные. Продолжить?')) {
+      importFile.value = '';
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const parsed = JSON.parse(event.target.result);
+        if (parsed && Array.isArray(parsed.dogs)) {
+          state = parsed;
+          save();
+          renderList();
+          alert('База успешно загружена! Собак в базе: ' + state.dogs.length);
+        } else {
+          alert('Ошибка: неверный формат файла.');
+        }
+      } catch (err) {
+        alert('Ошибка при чтении файла.');
+      }
+      importFile.value = '';
+    };
+    reader.readAsText(file);
+  });
+  
   applyTheme(getSavedTheme());
   load();
   loadSort();
